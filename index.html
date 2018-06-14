@@ -1,15 +1,206 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>测试页面</title>
+    <meta charset="utf-8">
+    <title>特效</title>
+
 </head>
 
 <body>
-    <h1>测试页面呵呵呵呵<h1>
+
+    <div id="root"></div>
+
+    <script type="text/javascript" src="raphael.js"></script>
+    <script type="text/javascript">
+        var paper, root;
+        var textStrokeWidth = 30;
+        var dotStep = 30;
+        var dotR = 6;
+        //计算宽高属性
+        var winWidth = window.innerWidth;
+        var winHeight = window.innerHeight;
+        var boxX = 0;
+        var boxY = 0;
+        var boxWidth = winWidth;
+        var boxHeight = winHeight;
+        var textBoxWidth = boxWidth / 3;
+        var textWidth = textBoxWidth * 0.6;
+        var textHeight = textBoxWidth * 0.8;
+        var texty = boxY + textBoxWidth * 0.2;
+        var text1x = boxX + textBoxWidth * 0.2;
+        var text2x = boxX + textBoxWidth + textBoxWidth * 0.2;
+        var text3x = boxX + textBoxWidth * 2 + textBoxWidth * 0.2;
+        var paths = [];
+        var circles = [];
+        var pathDataArray = [];
+
+        function init() {
+            while (boxWidth / boxHeight <= 3) {
+                boxHeight -= 10;
+            }
+            boxX = 0;
+            boxY = (winHeight - boxHeight) / 2;
+            textBoxWidth = boxWidth / 3;
+            textWidth = textBoxWidth * 0.8;
+            textHeight = textBoxWidth;
+            texty = boxY * 0.1;
+            text1x = boxX + textBoxWidth * 0.1;
+            text2x = boxX + textBoxWidth * 1.1;
+            text3x = boxX + textBoxWidth * 2.1;
+            paper = Raphael(boxX, boxY, boxWidth, boxHeight);
+            root = paper.rect(0, 0, boxWidth, boxHeight);
+            root.attr({
+                "stroke": "#ddd",
+                "stroke-width": 2
+            });
+            initPathDataArray();
+            createPaths();
+            generateDots();
+            animateDots();
+        }
+
+        function initPathDataArray() {
+            pathDataArray = [
+                [
+                    ["M", text1x, texty + textHeight * 0.18],
+                    ["H", text1x + textWidth]
+                ],
+                [
+                    ["M", text1x + (textWidth / 2 - textStrokeWidth / 1.9), texty],
+                    ["V", texty + textHeight * 0.39]
+                ],
+                [
+                    ["M", text1x + (textWidth / 2 - textStrokeWidth * 1.4), texty + textHeight * 0.22],
+                    ["L", text1x, texty + textHeight * 0.4]
+                ],
+                [
+                    ["M", text1x + (textWidth / 2 + textStrokeWidth * 0.4), texty + textHeight * 0.22],
+                    ["L", text1x + textWidth * 1.02, texty + textHeight * 0.4]
+                ],
+                [
+                    ["M", text1x + textWidth * 0.1, texty + textHeight * 0.42],
+                    ["H", text1x + textWidth * 0.9],
+                    ["L", text1x + (textWidth / 2 - textStrokeWidth / 2), texty + textHeight * 0.54],
+                    ["V", texty + textHeight * 0.9],
+                    ["L", text1x + textWidth * 0.4, texty + textHeight * 0.8]
+                ],
+                [
+                    ["M", text1x, texty + textHeight * 0.6],
+                    ["H", text1x + textWidth]
+                ],
+                //
+                [
+                    ["M", text2x + textWidth * 0.34, texty],
+                    ["L", text2x, texty + textHeight * 0.4]
+                ],
+                [
+                    ["M", text2x + textWidth * 0.2, texty + textHeight * 0.22],
+                    ["H", text2x + textWidth * 0.56]
+                ],
+                [
+                    ["M", text2x + textWidth * 0.2, texty + textHeight * 0.22],
+                    ["V", texty + textHeight * 0.9]
+                ],
+
+                [
+                    ["M", text2x + textWidth * 0.84, texty],
+                    ["L", text2x + textWidth * 0.5, texty + textHeight * 0.4]
+                ],
+                [
+                    ["M", text2x + textWidth * 0.7, texty + textHeight * 0.22],
+                    ["H", text2x + textWidth]
+                ],
+                [
+                    ["M", text2x + textWidth * 0.818, texty + textHeight * 0.26],
+                    ["V", texty + textHeight * 0.9],
+                    ["L", text2x + textWidth * 0.7, texty + textHeight * 0.8]
+                ],
+                //3
+                [
+                    ["M", text3x + textWidth * 0.1, texty + textHeight * 0.17],
+                    ["H", text3x + textWidth * 0.9]
+                ],
+                [
+                    ["M", text3x + (textWidth / 2 - textStrokeWidth / 3.6), texty],
+                    ["V", texty + textHeight * 0.4]
+                ],
+                [
+                    ["M", text3x + textWidth * 0.22, texty + textHeight * 0.3],
+                    ["H", text3x + textWidth * 0.8]
+                ],
+                [
+                    ["M", text3x, texty + textHeight * 0.4],
+                    ["H", text3x + textWidth]
+                ],
+                [
+                    ["M", text3x + textWidth * 0.24, texty + textHeight * 0.48],
+                    ["V", texty + textHeight * 0.9]
+                ],
+                [
+                    ["M", text3x + textWidth * 0.24, texty + textHeight * 0.48],
+                    ["H", text3x + textWidth * 0.76],
+                    ["V", texty + textHeight * 0.9],
+                    ["L", text3x + textWidth * 0.66, texty + textHeight * 0.8]
+                ],
+                [
+                    ["M", text3x + textWidth * 0.24, texty + textHeight * 0.6],
+                    ["H", text3x + textWidth * 0.76]
+                ],
+                [
+                    ["M", text3x + textWidth * 0.24, texty + textHeight * 0.7],
+                    ["H", text3x + textWidth * 0.76]
+                ]
+            ];
+        }
+
+        function createPaths() {
+            for (var i = 0; i < pathDataArray.length; i++) {
+                var pathData = pathDataArray[i];
+                var path = paper.path(pathData);
+                path.attr({
+                    "stroke-linecap": "round",
+                    "stroke": "#FFF",
+                    "stroke-width": textStrokeWidth
+                })
+                paths.push(path);
+            }
+        }
+
+        function generateDots() {
+            for (var i = 0; i < paths.length; i++) {
+                var path = paths[i];
+                var k = 0;
+                var pathLength = path.getTotalLength();
+                while (dotStep * k <= pathLength) {
+                    var dotPoint = path.getPointAtLength(k * dotStep);
+                    var circle = paper.circle(dotPoint.x, dotPoint.y, dotR);
+                    circle.attr({
+                        "stroke-width": 0
+                    });
+                    circles.push(circle);
+                    k++;
+                }
+            }
+        }
+
+        function animateDots() {
+            var k = 0;
+            var interval = window.setInterval(function () {
+                circles[k].animate({
+                    "fill": "#A8FF24",
+                    "stroke-width": 2,
+                    "stroke": "#FFFF37"
+                }, 200, "linear");
+                k++;
+                if (k >= circles.length) {
+                    window.clearInterval(interval);
+                }
+            }, 200);
+        }
+
+        init();
+    </script>
 </body>
 
 </html>
