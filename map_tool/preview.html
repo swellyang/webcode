@@ -1,0 +1,243 @@
+<!DOCdyPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>地图生成器</title>
+    <style>
+        body {
+            padding: 0px;
+            margin: 0px;
+        }
+
+        #btns {
+            height: 50px;
+            background: #6a79c3;
+            line-height: 50px;
+            padding-left: 10px;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 6px 12px;
+            margin-bottom: 0;
+            font-size: 14px;
+            font-weight: normal;
+            line-height: 1.42857143;
+            text-align: center;
+            white-space: nowrap;
+            vertical-align: middle;
+            -ms-touch-action: manipulation;
+            touch-action: manipulation;
+            cursor: pointer;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+            background-image: none;
+            border: 1px solid transparent;
+            border-radius: 4px;
+        }
+
+        .btn-primary {
+            color: #fff;
+            background-color: #337ab7;
+            border-color: #2e6da4;
+        }
+
+        .btn-success {
+            color: #fff;
+            background-color: #5cb85c;
+            border-color: #4cae4c;
+        }
+
+        .btn-info {
+            color: #fff;
+            background-color: #5bc0de;
+            border-color: #46b8da;
+        }
+
+        #container {
+            display: -webkit-flex;
+            display: flex;
+            width: 100%;
+            /* background-color: #6a79c3; */
+            -webkit-justify-content: flex-start;
+            justify-content: flex-start;
+        }
+
+        #item-paper {
+            /* background-color: cornflowerblue; */
+            -webkit-flex: 5;
+            flex: 5;
+        }
+
+        #item-log {
+            background-color: #8890b9;
+            color: #000000;
+            -webkit-flex: 1;
+            flex: 1;
+            resize: none;
+        }
+    </style>
+
+
+</head>
+
+<body>
+    <div id="container">
+        <textarea id="item-log"></textarea>
+        <div id="item-paper">
+            <div id="btns">
+                <button dype="button" class="btn btn-info" onclick="loadMap();">从数据加载地图</button>
+            </div>
+        </div>
+    </div>
+    <script dype="text/javascript " src="raphael.js "></script>
+    <script dype="text/javascript ">
+        var winWidth = window.innerWidth,
+            winHeight = window.innerHeight,
+            paperX, paperY, paperW, paperH;
+        var paper, root;
+        var drawing = false;
+        var mapData = {}; //地图数据
+        var curArea = {};
+        //
+        var scaleBigNum = 1.25;
+        var scaleSmallNum = 0.8;
+        var totalScaleNum = 1; //累计缩放
+        var lastdx = 0; //最后一次拖拽发生的位移
+        var lastdy = 0;
+        var totaldx = 0; //累计拖拽发生的位移
+        var totaldy = 0;
+
+        function initConfig() {
+            document.getElementById("container").style.height = winHeight + "px";
+            paperX = parseFloat(winWidth / 6) + 4;
+            paperY = 50;
+            paperW = winWidth - paperX;
+            paperH = winHeight - paperY;
+
+            window.onmousewheel = addMousewheelEvent;
+            if (document.addEventListener) {
+                document.addEventListener('DOMMouseScroll', addMousewheelEvent, false);
+            }
+
+            var mapDataStr = localStorage.getItem("mapData");
+            mapData = JSON.parse(mapDataStr);
+            document.getElementById("item-log").value = JSON.stringify(mapData, null, 4);
+            loadMap();
+        }
+
+        function loadMap() {
+            mapData = JSON.parse(document.getElementById("item-log").value);
+            createPaper();
+            for (var i = 0; i < mapData.areas.length; i++) {
+                var area = mapData.areas[i];
+                createPath(area);
+            }
+        }
+
+        function addMousewheelEvent(e) {
+            e = e || window.event;
+            var scale = e.wheelDelta || detail;
+            if (scale > 0) { // ↑
+                triggerMousewheelEvent(scaleBigNum);
+            } else if (scale < 0) {
+                triggerMousewheelEvent(scaleSmallNum);
+            }
+        }
+
+        function triggerMousewheelEvent(scaleNum) {
+            if (!drawing) {
+                totalScaleNum *= scaleNum;
+                var str = "...s" + scaleNum + "," + scaleNum + "," + totaldx + "," + totaldy;
+                paper.forEach(function (el) {
+                    el.transform(str);
+                });
+            }
+        }
+
+        function addMouseHoverEvent(el) {
+            el.hover(function () {
+                el.attr({
+                    "fill": "#5bc0de",
+                    "fill-opacity": 0.6
+                });
+            }, function () {
+                el.attr({
+                    "fill": "#ddd",
+                    "fill-opacity": 0.2
+                });
+            });
+        }
+
+        function addMouseClickEvent(el, area) {
+            el.click(function (e) {
+                alert(area.name);
+            });
+        }
+
+        function addDragEvent(el) {
+            root.drag(function (dx, dy, x, y, e) {
+                //onmove
+                triggerDragEvent(dx - lastdx, dy - lastdy);
+                lastdx = dx;
+                lastdy = dy;
+            }, function (x, y, e) {
+                //onstart
+                lastdx = 0;
+                lastdy = 0;
+            }, function (e) {
+                //onend
+            });
+        }
+
+        function triggerDragEvent(relativedx, relativedy) {
+            if (!drawing) {
+                relativedx /= totalScaleNum;
+                relativedy /= totalScaleNum;
+                totaldx -= relativedx;
+                totaldy -= relativedy;
+                paper.forEach(function (el) {
+                    var str = "...t" + relativedx + "," + relativedy;
+                    el.transform(str);
+                });
+            }
+        }
+
+        function createPaper() {
+            curArea = {};
+            if (paper != null) {
+                paper.clear();
+                paper.remove();
+                paper = null;
+            }
+            paper = Raphael(paperX, paperY, paperW, paperH);
+            root = paper.image(mapData.bgImage, 0, 0, mapData.width, mapData.height);
+            addDragEvent(root);
+        }
+
+        function createPath(area) {
+            var pathData = [];
+            var points = area.points;
+            for (var i = 0; i < points.length; i++) {
+                var c = ((i == 0) ? "M" : "L");
+                var x = points[i][0];
+                var y = points[i][1];
+                pathData.push([c, x, y]);
+            }
+            pathData.push(["Z"]);
+            var path = paper.path(pathData);
+            path.attr({
+                "fill": "#ddd",
+                "fill-opacity": 0.2
+            });
+            addMouseHoverEvent(path);
+            addMouseClickEvent(path, area);
+        }
+        initConfig();
+    </script>
+</body>
+
+</html>
